@@ -108,271 +108,284 @@ class _DevoteeScreenState extends State<DevoteeScreen> {
       DeviceOrientation.portraitDown,
     ]);
 
-    return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          showSheet(context, null);
-        },
-        child: const Icon(Icons.add),
-      ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          Container(
-            padding: EdgeInsets.fromLTRB(
-                ScreenUtil().setWidth(10),
-                ScreenUtil().setHeight(10),
-                ScreenUtil().setWidth(10),
-                ScreenUtil().setHeight(10)
-            ),
-            child: TextFormField(
-                controller: textCon,
-                keyboardType: TextInputType.name,
-                style: TextStyle(
-                  fontSize: ScreenUtil().setSp(17),
+    return StreamBuilder<QuerySnapshot>(
+      stream: devotees,
+      builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+        List<String> numbers = [];
+        if(snapshot.hasData) {
+          numbers = snapshot.data!.docs.map((e) => e["Phone"].toString()).toList();
+        }
+        
+        return Scaffold(
+          floatingActionButton: FloatingActionButton(
+            onPressed: () {
+              showSheet(context, null, numbers);
+            },
+            child: const Icon(Icons.add),
+          ),
+          body: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              Container(
+                padding: EdgeInsets.fromLTRB(
+                    ScreenUtil().setWidth(10),
+                    ScreenUtil().setHeight(10),
+                    ScreenUtil().setWidth(10),
+                    ScreenUtil().setHeight(10)
                 ),
-                onChanged: (s) {
-                  setState(() {
-                    query = textCon.text;
-                  });
-                },
-                decoration: InputDecoration(
-                  hintText: 'Search',
-                  contentPadding: EdgeInsets.fromLTRB(
-                   ScreenUtil().setWidth(10),
-                   ScreenUtil().setHeight(0),
-                   ScreenUtil().setWidth(10),
-                   ScreenUtil().setHeight(0)
-                  ),
-                  suffixIcon: IconButton(
-                    onPressed: () {
+                child: TextFormField(
+                    controller: textCon,
+                    keyboardType: TextInputType.name,
+                    style: TextStyle(
+                      fontSize: ScreenUtil().setSp(17),
+                    ),
+                    onChanged: (s) {
                       setState(() {
-                        query = "";
-                        textCon.text = "";
+                        query = textCon.text;
                       });
                     },
-                    icon: const Icon(
-                      Icons.clear,
-                      color: Colors.black,
-                    ),
-                  ),
-                  border: const OutlineInputBorder(
-                    borderSide: BorderSide(
-                      color: Colors.black,
-                      width: 1.0,
-                    ),
-                    borderRadius: BorderRadius.all(
-                      Radius.circular(50),
-                    ),
-                  ),
-                )
-            ),
-          ),
-          Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: devotees,
-              builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-                if (!snapshot.hasData || snapshot.hasError || snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(
-                    child: SizedBox(
-                      width: ScreenUtil().setWidth(20),
-                      height: ScreenUtil().setWidth(20),
-                      child: const CircularProgressIndicator(),
-                    ),
-                  );
-                } else {
-                  return ListView.builder(
-                    itemCount: snapshot.data!.docs.length,
-                    shrinkWrap: true,
-                    padding: const EdgeInsets.all(0),
-                    itemBuilder: (context, pos) {
-
-                      bool visible = false;
-                      
-                      (snapshot.data!.docs[pos].data() as Map).forEach((key, value) {
-                        if(key == "Birthday" || key == "Anniversary date") {
-                          String date = "";
-                          if(value != null){
-                            var d = DateTime.fromMillisecondsSinceEpoch(
-                              (snapshot.data!.docs[pos].data() as Map)['Birthday'].seconds * 1000,
-                            );
-                            // date = DateFormat.yMMMd().format(d);
-                            date = "${d.day}/${d.month}/${d.year}";
-                          }
-                          if(date.toString().toLowerCase().contains(query.toLowerCase())) {
-                           visible = true;
-                          }
-                        } else if(value.toString().toLowerCase().contains(query.toLowerCase())) {
-                         visible = true;
-                        }
-                      });
-
-                      return (!visible)?Container():ExpansionTile(
-                        title: Text(
-                          snapshot.data!.docs[pos]["Name"].toString(),
+                    decoration: InputDecoration(
+                      hintText: 'Search',
+                      contentPadding: EdgeInsets.fromLTRB(
+                       ScreenUtil().setWidth(10),
+                       ScreenUtil().setHeight(0),
+                       ScreenUtil().setWidth(10),
+                       ScreenUtil().setHeight(0)
+                      ),
+                      suffixIcon: IconButton(
+                        onPressed: () {
+                          setState(() {
+                            query = "";
+                            textCon.text = "";
+                          });
+                        },
+                        icon: const Icon(
+                          Icons.clear,
+                          color: Colors.black,
                         ),
-                        children: [
-
-                          Container(
-                            padding: EdgeInsets.fromLTRB(
-                                ScreenUtil().setWidth(10),
-                                ScreenUtil().setHeight(10),
-                                ScreenUtil().setWidth(10),
-                                ScreenUtil().setHeight(10)
-                            ),
-                            width: double.infinity,
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              "Phone: ${(snapshot.data!.docs[pos].data() as Map)["Phone"]}",
-                            ),
-                          ),
-
-                          ListView.builder(
-                            itemCount: fields.length,
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemBuilder: (context, index) {
-                              //print(snapshot.data.docs[pos].data().isEmpty.toString());
-
-                              var key = fields[index];
-                              var value = (snapshot.data!.docs[pos].data() as Map)[key];
-
+                      ),
+                      border: const OutlineInputBorder(
+                        borderSide: BorderSide(
+                          color: Colors.black,
+                          width: 1.0,
+                        ),
+                        borderRadius: BorderRadius.all(
+                          Radius.circular(50),
+                        ),
+                      ),
+                    )
+                ),
+              ),
+              Expanded(
+                child: Builder(
+                  builder: (context) {
+                    if (!snapshot.hasData || snapshot.hasError || snapshot.connectionState == ConnectionState.waiting) {
+                      return Center(
+                        child: SizedBox(
+                          width: ScreenUtil().setWidth(20),
+                          height: ScreenUtil().setWidth(20),
+                          child: const CircularProgressIndicator(),
+                        ),
+                      );
+                    } else {
+                      return ListView.builder(
+                        itemCount: snapshot.data!.docs.length,
+                        shrinkWrap: true,
+                        padding: const EdgeInsets.all(0),
+                        itemBuilder: (context, pos) {
+    
+                          bool visible = false;
+                          
+                          (snapshot.data!.docs[pos].data() as Map).forEach((key, value) {
+                            if(key == "Birthday" || key == "Anniversary date") {
                               String date = "";
-                              if(value.runtimeType == Timestamp){
-                                var d = DateTime.fromMillisecondsSinceEpoch(value.seconds * 1000);
+                              if(value != null){
+                                var d = DateTime.fromMillisecondsSinceEpoch(
+                                  (snapshot.data!.docs[pos].data() as Map)['Birthday'].seconds * 1000,
+                                );
                                 // date = DateFormat.yMMMd().format(d);
                                 date = "${d.day}/${d.month}/${d.year}";
                               }
-                              return (key == "Name" || key == "Phone" || value == null || value == "")
-                                  ?Container()
-                                  :Container(
-                                padding: EdgeInsets.fromLTRB(
-                                  ScreenUtil().setWidth(10),
-                                  ScreenUtil().setHeight(10),
-                                  ScreenUtil().setWidth(10),
-                                  ScreenUtil().setHeight(10),
-                                ),
-                                child: (value.runtimeType != Timestamp)?Text(
-                                  "$key: $value",
-                                ):Text(
-                                  "$key: $date",
-                                ),
-                              );
-                            },
-                          ),
-
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              if(date.toString().toLowerCase().contains(query.toLowerCase())) {
+                               visible = true;
+                              }
+                            } else if(value.toString().toLowerCase().contains(query.toLowerCase())) {
+                             visible = true;
+                            }
+                          });
+    
+                          return (!visible)?Container():ExpansionTile(
+                            title: Text(
+                              snapshot.data!.docs[pos]["Name"].toString(),
+                            ),
                             children: [
-
+    
                               Container(
                                 padding: EdgeInsets.fromLTRB(
                                     ScreenUtil().setWidth(10),
                                     ScreenUtil().setHeight(10),
-                                    ScreenUtil().setWidth(20),
+                                    ScreenUtil().setWidth(10),
                                     ScreenUtil().setHeight(10)
                                 ),
-                                width: ScreenUtil().setWidth(150),
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    primary: Colors.red,
-                                  ),
-                                  onPressed: (){
-                                    FocusScope.of(context).unfocus();
-                                    showDialog(
-                                      context: context,
-                                      builder: (_) => AlertDialog(
-                                        title: Text(
-                                          "Are you sure you want to remove this devotee?",
-                                          style: TextStyle(
-                                              fontSize:ScreenUtil().setSp(17)
-                                          ),
-                                        ),
-                                        actions: [
-                                          SizedBox(
-                                            width: ScreenUtil().setWidth(300),
-                                            child: Row(
-                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                              children: [
-                                                FlatButton(
-                                                  child: const Text("Cancel"),
-                                                  onPressed: (){
-                                                    Navigator.pop(context);
-                                                  },
-                                                ),
-                                                ElevatedButton(
-                                                  style: ElevatedButton.styleFrom(
-                                                    primary: Colors.red,
-                                                    shape: RoundedRectangleBorder(
-                                                      borderRadius: BorderRadius.circular(10),
-                                                    ),
-                                                  ),
-                                                  child: const Text(
-                                                    "Confirm",
-                                                    style: TextStyle(
-                                                      color: Colors.white,
-                                                    ),
-                                                  ),
-                                                  onPressed: (){
-                                                    snapshot.data!.docs[pos].reference.delete();
-                                                    Navigator.pop(context);
-                                                  },
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
+                                width: double.infinity,
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  "Phone: ${(snapshot.data!.docs[pos].data() as Map)["Phone"]}",
+                                ),
+                              ),
+    
+                              ListView.builder(
+                                itemCount: fields.length,
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemBuilder: (context, index) {
+                                  //print(snapshot.data.docs[pos].data().isEmpty.toString());
+    
+                                  var key = fields[index];
+                                  var value = (snapshot.data!.docs[pos].data() as Map)[key];
+    
+                                  String date = "";
+                                  if(value.runtimeType == Timestamp){
+                                    var d = DateTime.fromMillisecondsSinceEpoch(value.seconds * 1000);
+                                    // date = DateFormat.yMMMd().format(d);
+                                    date = "${d.day}/${d.month}/${d.year}";
+                                  }
+                                  return (key == "Name" || key == "Phone" || value == null || value == "")
+                                      ?Container()
+                                      :Container(
+                                    padding: EdgeInsets.fromLTRB(
+                                      ScreenUtil().setWidth(10),
+                                      ScreenUtil().setHeight(10),
+                                      ScreenUtil().setWidth(10),
+                                      ScreenUtil().setHeight(10),
+                                    ),
+                                    child: (value.runtimeType != Timestamp)?Text(
+                                      "$key: $value",
+                                    ):Text(
+                                      "$key: $date",
+                                    ),
+                                  );
+                                },
+                              ),
+    
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+    
+                                  Container(
+                                    padding: EdgeInsets.fromLTRB(
+                                        ScreenUtil().setWidth(10),
+                                        ScreenUtil().setHeight(10),
+                                        ScreenUtil().setWidth(20),
+                                        ScreenUtil().setHeight(10)
+                                    ),
+                                    width: ScreenUtil().setWidth(150),
+                                    child: ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        primary: Colors.red,
                                       ),
-                                    );
-                                  },
-                                  child: Text(
-                                    "Remove",
-                                    style: TextStyle(
-                                      fontSize: ScreenUtil().setSp(13),
+                                      onPressed: (){
+                                        FocusScope.of(context).unfocus();
+                                        showDialog(
+                                          context: context,
+                                          builder: (_) => AlertDialog(
+                                            title: Text(
+                                              "Are you sure you want to remove this devotee?",
+                                              style: TextStyle(
+                                                  fontSize:ScreenUtil().setSp(17)
+                                              ),
+                                            ),
+                                            actions: [
+                                              SizedBox(
+                                                width: ScreenUtil().setWidth(300),
+                                                child: Row(
+                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                  children: [
+                                                    FlatButton(
+                                                      child: const Text("Cancel"),
+                                                      onPressed: (){
+                                                        Navigator.pop(context);
+                                                      },
+                                                    ),
+                                                    ElevatedButton(
+                                                      style: ElevatedButton.styleFrom(
+                                                        primary: Colors.red,
+                                                        shape: RoundedRectangleBorder(
+                                                          borderRadius: BorderRadius.circular(10),
+                                                        ),
+                                                      ),
+                                                      child: const Text(
+                                                        "Confirm",
+                                                        style: TextStyle(
+                                                          color: Colors.white,
+                                                        ),
+                                                      ),
+                                                      onPressed: (){
+                                                        snapshot.data!.docs[pos].reference.delete();
+                                                        Navigator.pop(context);
+                                                      },
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                      child: Text(
+                                        "Remove",
+                                        style: TextStyle(
+                                          fontSize: ScreenUtil().setSp(13),
+                                        ),
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ),
-
-                              Container(
-                                padding: EdgeInsets.fromLTRB(
-                                    ScreenUtil().setWidth(10),
-                                    ScreenUtil().setHeight(10),
-                                    ScreenUtil().setWidth(20),
-                                    ScreenUtil().setHeight(10)
-                                ),
-                                width: ScreenUtil().setWidth(150),
-                                child: ElevatedButton(
-                                  onPressed: (){
-                                    FocusScope.of(context).unfocus();
-                                    showSheet(context, snapshot.data!.docs[pos]);
-                                  },
-                                  child: Text(
-                                    "Update",
-                                    style: TextStyle(
-                                      fontSize: ScreenUtil().setSp(13),
+    
+                                  Container(
+                                    padding: EdgeInsets.fromLTRB(
+                                        ScreenUtil().setWidth(10),
+                                        ScreenUtil().setHeight(10),
+                                        ScreenUtil().setWidth(20),
+                                        ScreenUtil().setHeight(10)
+                                    ),
+                                    width: ScreenUtil().setWidth(150),
+                                    child: ElevatedButton(
+                                      onPressed: (){
+                                        FocusScope.of(context).unfocus();
+                                        showSheet(context, snapshot.data!.docs[pos], numbers);
+                                      },
+                                      child: Text(
+                                        "Update",
+                                        style: TextStyle(
+                                          fontSize: ScreenUtil().setSp(13),
+                                        ),
+                                      ),
                                     ),
                                   ),
-                                ),
+                                ],
                               ),
+    
                             ],
-                          ),
-
-                        ],
+                          );
+                        },
                       );
-                    },
-                  );
-                }
-              },
-            ),
+                    }
+                  },
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      }
     );
   }
 }
 
-showSheet(BuildContext context, QueryDocumentSnapshot? queryDocumentSnapshot){
+showSheet(
+  BuildContext context, 
+  QueryDocumentSnapshot? queryDocumentSnapshot,
+  List<String> numbers
+  ){
 
   final nameKey = GlobalKey<FormState>();
   final phoneKey = GlobalKey<FormState>();
@@ -461,8 +474,16 @@ showSheet(BuildContext context, QueryDocumentSnapshot? queryDocumentSnapshot){
                               snapshot["Phone"] = s;
                               phoneKey.currentState?.validate();
                             },
-                            validator: (String? value) => ((value ?? "").trim().isEmpty
-                                ? 'Name cannot be empty':null),
+                            validator: (String? value) {
+                              if((value ?? "").trim().isEmpty){
+                                return 'Phone cannot be empty';
+                              }
+                              else if(numbers.contains(value)){
+                                return 'Phone number already exists';
+                              } else {
+                                return null;
+                              }
+                            },
                           ),
                         ),
                         ListView.builder(
